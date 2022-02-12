@@ -1,8 +1,21 @@
 import random
 import string
-# Fernet module is imported from the
-# cryptography package
-from cryptography.fernet import Fernet
+import sqlite3
+
+
+def createTable():
+    connection = sqlite3.connect('PASSMANGER.db')
+
+    try:
+        connection.execute(''' CREATE TABLE PASSMANGER
+             (URL VARCHAR PRIMARY KEY     NOT NULL,
+             NAME           VARCHAR    NOT NULL,
+             PASSWORD            VARCHAR     NOT NULL
+             );
+             ''')
+    except:
+        pass
+    connection.close()
 
 special = '!"£$%^&*.,@#/?'
 def generatePassword(n):
@@ -39,57 +52,17 @@ def generatePassword(n):
 
 
 
-def writeToFile(password):
-    f = open("passwords.txt", "a")
-    f.write(password+"\n")
-    f.close()
+def writeToDb(url,name,password):
+    connection = sqlite3.connect('PASSMANGER.db')
+    connection.execute("INSERT INTO PASSMANGER VALUES ('"+url+"', '"+name+"','"+password+"' )")
+    connection.commit()
+    connection.close()
 
 
-def readFile():
-    f = open("passwords.txt", "r")
-    print(f.read())
-    f.close()
 
-def genKey():
-    key = Fernet.generate_key()
-
-    # string the key in a file
-    with open('filekey.key', 'wb') as filekey:
-        filekey.write(key)
-
-
-def encrypt():
-    with open('filekey.key', 'rb') as filekey:
-        key = filekey.read()
-
-    # using the generated key
-    fernet = Fernet(key)
-
-    # opening the original file to encrypt
-    with open('passwords.txt', 'rb') as file:
-        original = file.read()
-
-    # encrypting the file
-    encrypted = fernet.encrypt(original)
-
-    # opening the file in write mode and
-    # writing the encrypted data
-    with open('password.txt', 'wb') as encrypted_file:
-        encrypted_file.write(encrypted)
-    return key
-
-def decrypt(key):
-    # using the key
-    fernet = Fernet(key)
-
-    # opening the encrypted file
-    with open('password.txt', 'rb') as enc_file:
-        encrypted = enc_file.read()
-
-    # decrypting the file
-    decrypted = fernet.decrypt(encrypted)
-
-    # opening the file in write mode and
-    # writing the decrypted data
-    with open('password.txt', 'wb') as dec_file:
-        dec_file.write(decrypted)
+def readDb():
+    connection = sqlite3.connect('PASSMANGER.db')
+    cursor = connection.execute("SELECT * from PASSMANGER ")
+    for row in cursor:
+        print(row)
+    connection.close()
