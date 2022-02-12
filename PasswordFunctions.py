@@ -5,10 +5,10 @@ import string
 from cryptography.fernet import Fernet
 
 special = '!"£$%^&*.,@#/?'
-def generatePassword():
-    password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits + string.ascii_lowercase + special) for _ in range(14))
+def generatePassword(n):
+    password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits + string.ascii_lowercase + special) for _ in range(n))
     password = list(password)
-    num = random.randint(0, 13)
+    num = random.randint(0, n-1)
     taboo = []
 
     if password[num] is not string.ascii_uppercase:
@@ -16,19 +16,19 @@ def generatePassword():
     taboo.append(num)
 
     while num in taboo:
-        num = random.randint(0, 13)
+        num = random.randint(0, n-1)
     if password[num] is not string.ascii_lowercase:
        password[num] = random.SystemRandom().choice(string.ascii_lowercase)
     taboo.append(num)
 
     while num in taboo:
-        num = random.randint(0, 13)
+        num = random.randint(0, n-1)
     if password[num] is not string.digits:
        password[num] = random.SystemRandom().choice(string.digits)
     taboo.append(num)
 
     while num in taboo:
-        num = random.randint(0, 13)
+        num = random.randint(0, n-1)
     if password[num] is not special:
        password[num] = random.SystemRandom().choice(special)
 
@@ -36,6 +36,7 @@ def generatePassword():
     password = "".join(password)
 
     return password
+
 
 
 def writeToFile(password):
