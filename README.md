@@ -1,2 +1,3 @@
-# Throways
-create throways account with temp mails
+# password manager
+
+
