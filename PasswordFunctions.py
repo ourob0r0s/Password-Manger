@@ -1,95 +1,72 @@
-import random
+import secrets
 import string
-# Fernet module is imported from the
-# cryptography package
-from cryptography.fernet import Fernet
+import sqlite3
 
-special = '!"£$%^&*.,@#/?'
+conn = sqlite3.connect('Database')
+cursor = conn.cursor()
+try:
+    table = """CREATE TABLE PASSKEEP(
+            NAME VARCHAR(100) NOT NULL,
+            PASS VARCHAR(100) NOT NULL,
+            PRIMARY KEY(NAME)
+            );"""
+
+    cursor.execute(table)
+except Exception as e:
+    print(e)
+
+
+
 def generatePassword(n):
-    password = ''.join(random.SystemRandom().choice(string.ascii_uppercase + string.digits + string.ascii_lowercase + special) for _ in range(n))
-    password = list(password)
-    num = random.randint(0, n-1)
-    taboo = []
 
-    if password[num] is not string.ascii_uppercase:
-       password[num] = random.SystemRandom().choice(string.ascii_uppercase)
-    taboo.append(num)
-
-    while num in taboo:
-        num = random.randint(0, n-1)
-    if password[num] is not string.ascii_lowercase:
-       password[num] = random.SystemRandom().choice(string.ascii_lowercase)
-    taboo.append(num)
-
-    while num in taboo:
-        num = random.randint(0, n-1)
-    if password[num] is not string.digits:
-       password[num] = random.SystemRandom().choice(string.digits)
-    taboo.append(num)
-
-    while num in taboo:
-        num = random.randint(0, n-1)
-    if password[num] is not special:
-       password[num] = random.SystemRandom().choice(special)
-
-
-    password = "".join(password)
+    alphabet = string.ascii_letters + string.digits
+    while True:
+        password = ''.join(secrets.choice(alphabet) for i in range(n))
+        if (any(c.islower() for c in password)
+                and any(c.isupper() for c in password)
+                and sum(c.isdigit() for c in password) >= 3):
+            break
 
     return password
+def generatePasswordPunc(n):
 
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    while True:
+        password = ''.join(secrets.choice(alphabet) for i in range(n))
+        if (any(c.islower() for c in password)
+                and any(c.isupper() for c in password)
+                and sum(c.isdigit() for c in password) >= 3)\
+                and any(not c.isalnum() for c in password ):
+            break
+    return password
 
+def insert(name, passcode):
+    conn = sqlite3.connect('Database')
+    cursor = conn.cursor()
 
-def writeToFile(password):
-    f = open("passwords.txt", "a")
-    f.write(password+"\n")
-    f.close()
+    insert_query = 'INSERT INTO PASSKEEP VALUES (\'' + name + '\', \'' + passcode + '\')'
+    cursor.execute(insert_query)
+    conn.commit()
+    conn.close()
 
+def readP(name):
+    conn = sqlite3.connect('Database')
+    c = conn.cursor()
 
-def readFile():
-    f = open("passwords.txt", "r")
-    print(f.read())
-    f.close()
+    c.execute('SELECT PASS FROM PASSKEEP WHERE NAME = \''+str(name)+'\'')
 
-def genKey():
-    key = Fernet.generate_key()
+    passcode = c.fetchone()
+    conn.close()
+    if passcode is None:
+        print("no enterie by this name")
+        return
+    return passcode
+        
+def readN():
+    conn = sqlite3.connect('Database')
+    conn.row_factory = lambda cursor, row: row[0]
+    c = conn.cursor()
+    names = c.execute('SELECT NAME FROM PASSKEEP').fetchall()
+    conn.close()
+    return names
 
-    # string the key in a file
-    with open('filekey.key', 'wb') as filekey:
-        filekey.write(key)
-
-
-def encrypt():
-    with open('filekey.key', 'rb') as filekey:
-        key = filekey.read()
-
-    # using the generated key
-    fernet = Fernet(key)
-
-    # opening the original file to encrypt
-    with open('passwords.txt', 'rb') as file:
-        original = file.read()
-
-    # encrypting the file
-    encrypted = fernet.encrypt(original)
-
-    # opening the file in write mode and
-    # writing the encrypted data
-    with open('password.txt', 'wb') as encrypted_file:
-        encrypted_file.write(encrypted)
-    return key
-
-def decrypt(key):
-    # using the key
-    fernet = Fernet(key)
-
-    # opening the encrypted file
-    with open('password.txt', 'rb') as enc_file:
-        encrypted = enc_file.read()
-
-    # decrypting the file
-    decrypted = fernet.decrypt(encrypted)
-
-    # opening the file in write mode and
-    # writing the decrypted data
-    with open('password.txt', 'wb') as dec_file:
-        dec_file.write(decrypted)
